@@ -6,9 +6,9 @@ public class ArgsInitial {
     private String[] args;
     private boolean valid = true;
     private Set<Character> unexpectedArguments = new TreeSet<Character>();
-    private Map<Character, Boolean> booleanArgs =
-            new HashMap<Character, Boolean>();
-    private Map<Character, String> stringArgs = new HashMap<Character, String>();
+    private Map<Character, ArgumentMarshaler> booleanArgs =
+            new HashMap<>();
+    private Map<Character, ArgumentMarshaler> stringArgs = new HashMap<>();
     private Map<Character, Integer> intArgs = new HashMap<Character, Integer>();
     private Set<Character> argsFound = new HashSet<Character>();
     private int currentArgument;
@@ -69,7 +69,7 @@ public class ArgsInitial {
     }
 
     private void parseBooleanSchemaElement(char elementId) {
-        booleanArgs.put(elementId, false);
+        booleanArgs.put(elementId, new ArgumentMarshaler.BooleanArgumentMarshaler());
     }
 
     private void parseIntegerSchemaElement(char elementId) {
@@ -77,7 +77,7 @@ public class ArgsInitial {
     }
 
     private void parseStringSchemaElement(char elementId) {
-        stringArgs.put(elementId, "");
+        stringArgs.put(elementId, new ArgumentMarshaler.StringArgumentMarshaler());
     }
 
     private boolean isStringSchemaElement(String elementTail) {
@@ -159,7 +159,7 @@ public class ArgsInitial {
     private void setStringArg(char argChar){
         currentArgument++;
         try {
-            stringArgs.put(argChar, args[currentArgument]);
+            stringArgs.get(argChar).setValue(args[currentArgument]);
         } catch (ArrayIndexOutOfBoundsException e) {
             valid = false;
             errorArgumentId = argChar;
@@ -172,7 +172,7 @@ public class ArgsInitial {
     }
 
     private void setBooleanArg(char argChar, boolean value) {
-        booleanArgs.put(argChar, value);
+        booleanArgs.get(argChar).setValue(value);
     }
 
     private boolean isBooleanArg(char argChar) {
@@ -232,7 +232,7 @@ public class ArgsInitial {
     }
 
     public String getString(char arg) {
-        return blankIfNull(stringArgs.get(arg));
+        return blankIfNull((String)stringArgs.get(arg).get());
     }
 
     public int getInt(char arg) {
@@ -240,7 +240,7 @@ public class ArgsInitial {
     }
 
     public boolean getBoolean(char arg) {
-        return falseIfNull(booleanArgs.get(arg));
+        return falseIfNull((Boolean)booleanArgs.get(arg).get());
     }
 
     public boolean has(char arg) {
@@ -249,5 +249,38 @@ public class ArgsInitial {
 
     public boolean isValid() {
         return valid;
+    }
+
+
+    private static abstract class ArgumentMarshaler {
+        protected Object value = null;
+
+        public abstract void setValue(Object value);
+
+        public abstract Object get();
+
+        private static class BooleanArgumentMarshaler extends ArgumentMarshaler {
+            @Override
+            public void setValue(Object value) {
+                this.value = value;
+            }
+
+            @Override
+            public Object get() {
+                return value;
+            }
+        }
+
+        private static class StringArgumentMarshaler extends ArgumentMarshaler {
+            @Override
+            public void setValue(Object value) {
+                this.value = value;
+            }
+
+            @Override
+            public Object get() {
+                return value;
+            }
+        }
     }
 }
